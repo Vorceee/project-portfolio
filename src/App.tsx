@@ -4,48 +4,52 @@ import { useEffect, useState, useRef } from "react";
 import * as THREE from "three";
 import "./App.css";
 
-function Planet({ onClick }: { onClick: () => void }) {
-  const { scene } = useGLTF("models/mars.glb");
+function Planet({ modelPath, position, lightColor, rotation, onClick }: { modelPath: string; position: [number, number, number]; lightColor: string; rotation: number; onClick: () => void }) {
+  const { scene } = useGLTF(modelPath);
   const planetRef = useRef<THREE.Object3D | null>(null);
-  const [positionY, setPositionY] = useState(0);
+  const [offsetY, setOffsetY] = useState(position[1]);
 
   useEffect(() => {
     const handleScroll = () => {
-      setPositionY(window.scrollY * 0.02); 
+      setOffsetY(position[1] + window.scrollY * 0.02); // Adjust scroll factor for smooth movement
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [position]);
 
   useFrame(() => {
     if (planetRef.current) {
-      planetRef.current.position.y = positionY;
-      planetRef.current.rotation.y += 0.002;
+      planetRef.current.position.y = offsetY;
+      planetRef.current.rotation.y += rotation; // Slow rotation over time
     }
   });
 
   return (
     <>
-      <primitive ref={planetRef} object={scene} scale={1.5} position={[-15, 0, -15]} onClick={onClick} />
-      <pointLight position={[-15, 0, -10]} intensity={1.5} color="orange" distance={5} decay={2} />
+      <primitive ref={planetRef} object={scene} scale={2} position={[position[0], offsetY, position[2]]} onClick={onClick} />
+      <pointLight position={[position[0], offsetY, position[2] + 5]} intensity={1.5} color={lightColor} distance={5} decay={2} />
     </>
   );
 }
 
-function InfoBox({ show, onClose }: { show: boolean; onClose: () => void }) {
+function InfoBox({ show, title, description, onClose }: { show: boolean; title: string; description: string; onClose: () => void }) {
   if (!show) return null;
 
   return (
     <div className="info-box" onClick={onClose}>
-      <h2>test</h2>
-      <p>test</p>
+      <h2>{title}</h2>
+      <p>{description}</p>
       <button onClick={onClose}>Close</button>
     </div>
   );
 }
 
 export default function App() {
-  const [showInfo, setShowInfo] = useState(false);
+  const [info, setInfo] = useState<{ show: boolean; title: string; description: string }>({
+    show: false,
+    title: "",
+    description: ""
+  });
 
   return (
     <div className="space-container">
@@ -54,9 +58,24 @@ export default function App() {
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <Stars radius={100} depth={50} count={5000} factor={4} fade />
-        <Planet onClick={() => setShowInfo(true)} />
+        
+        <Planet 
+          modelPath="models/planet.glb" 
+          position={[-15, 0, -10]} 
+          lightColor="blue"
+          rotation={0.002} 
+          onClick={() => setInfo({ show: true, title: "planet 1", description: "this is a test" })} 
+        />
+        
+        <Planet 
+          modelPath="models/planet-2.glb" 
+          position={[15, -15, -15]} 
+          lightColor="white" 
+          rotation={-0.003}
+          onClick={() => setInfo({ show: true, title: "Planet 2", description: "this is a test" })} 
+        />
       </Canvas>
-      <InfoBox show={showInfo} onClose={() => setShowInfo(false)} />
+      <InfoBox show={info.show} title={info.title} description={info.description} onClose={() => setInfo({ show: false, title: "", description: "" })} />
     </div>
   );
 }
