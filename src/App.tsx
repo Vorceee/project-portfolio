@@ -5,7 +5,7 @@ import * as THREE from "three";
 import "./App.css";
 
 function Planet({ onClick }: { onClick: () => void }) {
-  const { scene } = useGLTF("/models/mars.glb");
+  const { scene } = useGLTF("models/mars.glb");
   const planetRef = useRef<THREE.Object3D | null>(null);
   const [positionY, setPositionY] = useState(0);
 
